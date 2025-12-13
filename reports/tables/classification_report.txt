@@ -1,14 +1,14 @@
 ============================================================
-CLASSIFICATION REPORT - Gradient Boosting
+CLASSIFICATION REPORT - Random Forest
 ============================================================
 
               precision    recall  f1-score   support
 
- Underserved     1.0000    1.0000    1.0000      1451
- Well-served     1.0000    1.0000    1.0000       484
+ Underserved     0.9178    0.8020    0.8560      1308
+ Well-served     0.8619    0.9451    0.9016      1711
 
-    accuracy                         1.0000      1935
-   macro avg     1.0000    1.0000    1.0000      1935
-weighted avg     1.0000    1.0000    1.0000      1935
+    accuracy                         0.8831      3019
+   macro avg     0.8899    0.8735    0.8788      3019
+weighted avg     0.8861    0.8831    0.8818      3019
 
 ============================================================

@@ -56,20 +56,6 @@ echo "   • Cell area: ${CELL_AREA} km²"
 echo "   • Expected cells: ~$(printf "%'d" $EXPECTED_CELLS)"
 echo ""
 
-# Backup (optional)
-BACKUP_DIR="backup_$(date +%Y%m%d_%H%M%S)"
-read -p "⚠️  Backup existing results to ${BACKUP_DIR}/? (y/N) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "📦 Creating backup..."
-    mkdir -p "$BACKUP_DIR"
-    cp -r data/processed "$BACKUP_DIR/" 2>/dev/null || true
-    cp -r models "$BACKUP_DIR/" 2>/dev/null || true
-    cp -r reports "$BACKUP_DIR/" 2>/dev/null || true
-    echo "✓ Backup saved to: $BACKUP_DIR"
-    echo ""
-fi
-
 # Clean previous pipeline outputs
 echo "🧹 Cleaning previous pipeline outputs..."
 echo "   • Removing grid data..."
@@ -91,74 +77,154 @@ echo ""
 echo "🚀 Starting pipeline execution..."
 echo ""
 
+# Initialize timing
+PIPELINE_START=$(date +%s)
+POPULATION_TIME=0
+
 # Step 1: Generate grid
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 1/8: Generating ${GRID_SIZE}m × ${GRID_SIZE}m spatial grid..."
+echo "STEP 1/9: Generating ${GRID_SIZE}m × ${GRID_SIZE}m spatial grid..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+STEP_START=$(date +%s)
 python -m src.data.grid_generator
-echo "✓ Grid generated"
+STEP_END=$(date +%s)
+STEP_TIME=$((STEP_END - STEP_START))
+echo "✓ Grid generated (${STEP_TIME}s)"
 echo ""
 
 # Step 2: Extract features
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 2/8: Extracting transit coverage features..."
+echo "STEP 2/9: Extracting transit coverage features..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+STEP_START=$(date +%s)
 python -m src.data.feature_extractor
-echo "✓ Features extracted"
+STEP_END=$(date +%s)
+STEP_TIME=$((STEP_END - STEP_START))
+echo "✓ Features extracted (${STEP_TIME}s)"
+echo ""
+
+# Step 2.5: Integrate population data (NEW)
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "STEP 3/9: Integrating IBGE population data..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+STEP_START=$(date +%s)
+# Check if IBGE data file exists before attempting integration
+IBGE_ZIP="data/raw/ibge_populacao_bh_grade_id36.zip"
+if [ -f "$IBGE_ZIP" ]; then
+    echo "✓ IBGE data found: $IBGE_ZIP"
+    python -m src.data.population_integrator
+    # Rename output to replace the original features file
+    if [ -f "data/processed/features/grid_features_with_population.parquet" ]; then
+        mv data/processed/features/grid_features.parquet data/processed/features/grid_features_transit_only.parquet
+        mv data/processed/features/grid_features_with_population.parquet data/processed/features/grid_features.parquet
+        echo "✓ Population data integrated successfully"
+        
+        # Normalize population feature
+        echo "  Normalizing population feature..."
+        python -m src.data.normalize_population
+        echo "✓ Population feature normalized"
+    else
+        echo "⚠️  Population integration failed - continuing with transit-only features"
+    fi
+else
+    echo "⚠️  IBGE data not found at: $IBGE_ZIP"
+    echo "    Skipping population integration (will use transit-only features)"
+    echo "    To enable: Download IBGE data and place at $IBGE_ZIP"
+fi
+STEP_END=$(date +%s)
+POPULATION_TIME=$((STEP_END - STEP_START))
+echo "✓ Population integration completed (${POPULATION_TIME}s)"
+if [ $POPULATION_TIME -gt 300 ]; then
+    echo "⚠️  WARNING: Population integration exceeded 5-minute limit (FR-017)"
+fi
 echo ""
 
 # Step 3: Generate labels
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 3/8: Generating binary labels..."
+echo "STEP 4/9: Generating binary labels..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+STEP_START=$(date +%s)
 python -m src.data.label_generator
-echo "✓ Labels generated"
+STEP_END=$(date +%s)
+STEP_TIME=$((STEP_END - STEP_START))
+echo "✓ Labels generated (${STEP_TIME}s)"
 echo ""
 
 # Step 4: Prepare splits
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 4/8: Creating train/val/test splits..."
+echo "STEP 5/9: Creating train/val/test splits..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+STEP_START=$(date +%s)
 python -m src.data.preprocessing
-echo "✓ Data splits created"
+STEP_END=$(date +%s)
+STEP_TIME=$((STEP_END - STEP_START))
+echo "✓ Data splits created (${STEP_TIME}s)"
 echo ""
 
 # Step 5: Train models
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 5/8: Training models (LR, RF, GB)..."
+echo "STEP 6/9: Training models (LR, RF, GB)..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+STEP_START=$(date +%s)
 python -m src.models.train
-echo "✓ Models trained"
+STEP_END=$(date +%s)
+STEP_TIME=$((STEP_END - STEP_START))
+echo "✓ Models trained (${STEP_TIME}s)"
 echo ""
 
 # Step 6: Evaluate models
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 6/8: Evaluating models and generating plots..."
+echo "STEP 7/9: Evaluating models and generating plots..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+STEP_START=$(date +%s)
 python -m src.models.evaluator
-echo "✓ Evaluation complete"
+STEP_END=$(date +%s)
+STEP_TIME=$((STEP_END - STEP_START))
+echo "✓ Evaluation complete (${STEP_TIME}s)"
 echo ""
 
 # Step 7: Export to ONNX
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 7/8: Exporting best model to ONNX..."
+echo "STEP 8/9: Exporting best model to ONNX..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+STEP_START=$(date +%s)
 python -m src.models.export
-echo "✓ Model exported"
+STEP_END=$(date +%s)
+STEP_TIME=$((STEP_END - STEP_START))
+echo "✓ Model exported (${STEP_TIME}s)"
 echo ""
 
 # Step 8: Regenerate report
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 8/8: Regenerating technical report..."
+echo "STEP 9/9: Regenerating technical report..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+STEP_START=$(date +%s)
 python generate_report.py
-echo "✓ Report generated"
+STEP_END=$(date +%s)
+STEP_TIME=$((STEP_END - STEP_START))
+echo "✓ Report generated (${STEP_TIME}s)"
 echo ""
+
+# Calculate total execution time
+PIPELINE_END=$(date +%s)
+TOTAL_TIME=$((PIPELINE_END - PIPELINE_START))
+TOTAL_MIN=$((TOTAL_TIME / 60))
+TOTAL_SEC=$((TOTAL_TIME % 60))
 
 # Display results summary
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║  ✅ PIPELINE EXECUTION COMPLETE!                             ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
+echo ""
+echo "⏱️  Execution Time:"
+echo "   Total:        ${TOTAL_MIN}m ${TOTAL_SEC}s"
+echo "   Population:   ${POPULATION_TIME}s"
+if [ $TOTAL_TIME -gt 600 ]; then
+    echo "   ⚠️  WARNING: Total execution exceeded 10-minute target (FR-017)"
+fi
+if [ $POPULATION_TIME -gt 300 ]; then
+    echo "   ⚠️  WARNING: Population integration exceeded 5-minute target (FR-017)"
+fi
 echo ""
 
 # Show comparison

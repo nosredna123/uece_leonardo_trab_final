@@ -1,0 +1,36 @@
+{
+  "model_name": "Gradient Boosting",
+  "model_type": "gradient_boosting",
+  "feature_names": [
+    "stop_count",
+    "route_count",
+    "daily_trips",
+    "stop_density",
+    "route_diversity"
+  ],
+  "n_features": 5,
+  "model_version": "1.0.0",
+  "training_date": "2025-12-10T08:09:56.914767",
+  "export_date": "2025-12-10T08:09:56.914775",
+  "best_params": {
+    "subsample": 0.8,
+    "n_estimators": 200,
+    "min_samples_split": 5,
+    "min_samples_leaf": 1,
+    "max_depth": 3,
+    "learning_rate": 0.15
+  },
+  "val_f1_score": 1.0,
+  "cv_f1_score": 1.0,
+  "training_time_seconds": 3.8276307582855225,
+  "onnx_model_path": "best_model.onnx",
+  "onnx_file_size_mb": 0.08533763885498047,
+  "target_classes": [
+    "underserved",
+    "well_served"
+  ],
+  "class_labels": [
+    0,
+    1
+  ]
+}

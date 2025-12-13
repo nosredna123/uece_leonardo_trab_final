@@ -61,7 +61,7 @@ def main():
         
         print("\n" + "=" * 70)
         print("✓ Conversion completed successfully!")
-        print(f"✓ Parquet files saved in: data/processed/gtfs/")
+        print("✓ Parquet files saved in: data/processed/gtfs/")
         print("\nYou can now use these files in your notebooks:")
         print("  from src.data.gtfs_loader import GTFSLoader")
         print("  loader = GTFSLoader()")

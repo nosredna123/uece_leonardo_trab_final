@@ -3,8 +3,8 @@
 
 # Geographic Grid Configuration
 grid:
-  # Cell size in meters (200m for higher resolution with population data)
-  cell_size_meters: 200
+  # Cell size in meters (250m balances resolution and aggregation)
+  cell_size_meters: 250
   
   # Geographic bounds for Belo Horizonte (from research)
   # Bounds include 2km buffer around GTFS stop coverage
@@ -15,8 +15,8 @@ grid:
     lon_max: -43.843522
   
   # Expected grid statistics (validation targets)
-  expected_cells: 20125  # Actual cell count for 200m grids with 2km buffer
-  expected_area_km2: 0.04  # Expected area per cell (0.2km × 0.2km)
+  expected_cells: 13000  # Approximate cell count for 250m grids
+  expected_area_km2: 0.0625  # Expected area per cell (0.25km × 0.25km)
 
 # Feature Extraction Configuration
 features:
@@ -32,39 +32,20 @@ features:
   # Optional metrics
   include_density: true  # Calculate stop_density (stops/km²)
   include_diversity: true  # Calculate route_diversity
-  
-  # Population Integration (Phase 11 - User Story 1)
-  population:
-    enabled: true
-    source: "IBGE_Censo_2022"  # Data source identifier
-    feature_name: "population_count"  # Column name in enriched dataset
-    validation:
-      min_total_population: 2300000  # Minimum expected total (2.3M - 10%)
-      max_total_population: 2750000  # Maximum expected total (2.5M + 10%)
-      max_per_cell: 5000  # Maximum reasonable population per 200m cell
-    normalization: "StandardScaler"  # Same as other features for consistency
 
 # Label Generation Configuration
 labels:
   # Threshold for well-served classification
-  # For 200m grids: use 90th percentile to account for higher zero-transit cell count
-  # Top 10% (90th percentile) = well-served (cells with meaningful transit service)
-  threshold_quantile: 0.90
+  # For 250m grids: use 75th percentile for balanced classes
+  # Top 25% (75th percentile) = well-served
+  threshold_quantile: 0.75
   
   # Minimum minority class percentage (validation)
-  min_minority_class_pct: 0.05  # Lowered for 200m grid (more zero-transit cells)
+  min_minority_class_pct: 0.15
   
   # Target label distribution
-  target_well_served_pct: 0.10  # 10% well-served cells (adjusted for 200m grid)
-  target_underserved_pct: 0.90  # 90% underserved cells
-  
-  # Noise configuration for realistic label generation
-  # Adds uncertainty to prevent perfect model performance (overfitting indicator)
-  noise:
-    enabled: true  # Set to false for deterministic labels
-    population_noise_std: 0.25  # 25% std deviation on population (simulates census errors)
-    threshold_noise_std: 0.15   # 15% std deviation on threshold (simulates definition uncertainty)
-    label_flip_probability: 0.05  # 5% probability of random label flip (simulates borderline cases)
+  target_well_served_pct: 0.30  # 30% well-served cells
+  target_underserved_pct: 0.70  # 70% underserved cells
 
 # Training Configuration
 training:
@@ -179,8 +160,6 @@ pipeline:
   # Performance targets
   feature_extraction_max_minutes: 5
   training_max_minutes: 40  # Target: 30 minutes
-  population_merge_max_minutes: 10  # Target: < 10 mins for 200m grid + population
-  population_aggregation_max_minutes: 5  # Target: < 5 mins for spatial aggregation
   
   # Validation
   validate_intermediate_outputs: true

@@ -1,0 +1,31 @@
+============================================================
+TRAINING SUMMARY
+============================================================
+
+Model: Logistic Regression
+Search Method: GridSearchCV
+Best Parameters: {'C': 10.0, 'max_iter': 1000, 'penalty': 'l2', 'solver': 'lbfgs'}
+Best CV F1 Score: 0.9998
+Validation F1 Score: 0.9979
+Training Time: 1.57 seconds (0.03 minutes)
+
+------------------------------------------------------------
+
+Model: Random Forest
+Search Method: RandomizedSearchCV
+Best Parameters: {'n_estimators': 500, 'min_samples_split': 15, 'min_samples_leaf': 4, 'max_features': 'sqrt', 'max_depth': 25, 'bootstrap': True}
+Best CV F1 Score: 0.9998
+Validation F1 Score: 0.9979
+Training Time: 6.12 seconds (0.10 minutes)
+
+------------------------------------------------------------
+
+Model: Gradient Boosting
+Search Method: RandomizedSearchCV
+Best Parameters: {'subsample': 0.8, 'n_estimators': 200, 'min_samples_split': 5, 'min_samples_leaf': 1, 'max_depth': 3, 'learning_rate': 0.15}
+Best CV F1 Score: 1.0000
+Validation F1 Score: 1.0000
+Training Time: 3.83 seconds (0.06 minutes)
+
+------------------------------------------------------------
+

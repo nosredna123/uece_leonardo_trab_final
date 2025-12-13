@@ -3,6 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2025-12-09
 
 ## Active Technologies
+- Python 3.10+ + GeoPandas 0.14+, Pandas 2.0+, Scikit-learn 1.3+, PyArrow 14.0+ (Parquet I/O), Shapely 2.0+ (spatial ops) (002-population-integration)
+- Parquet files (data/processed/), YAML config (config/model_config.yaml), ONNX model export (002-population-integration)
 
 - Python 3.10+ + scikit-learn 1.3.0+, pandas 2.0.0+, geopandas 0.14.0+, FastAPI 0.104.0+, ONNX Runtime 1.15.0+ (1-transit-coverage-classifier)
 
@@ -22,6 +24,7 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3.10+: Follow standard conventions
 
 ## Recent Changes
+- 002-population-integration: Added Python 3.10+ + GeoPandas 0.14+, Pandas 2.0+, Scikit-learn 1.3+, PyArrow 14.0+ (Parquet I/O), Shapely 2.0+ (spatial ops)
 
 - 1-transit-coverage-classifier: Added Python 3.10+ + scikit-learn 1.3.0+, pandas 2.0.0+, geopandas 0.14.0+, FastAPI 0.104.0+, ONNX Runtime 1.15.0+
 
